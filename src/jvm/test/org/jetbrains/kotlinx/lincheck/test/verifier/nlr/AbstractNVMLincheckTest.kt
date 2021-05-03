@@ -29,9 +29,7 @@ import org.jetbrains.kotlinx.lincheck.strategy.LincheckFailure
 import org.jetbrains.kotlinx.lincheck.strategy.UnexpectedExceptionFailure
 import org.jetbrains.kotlinx.lincheck.strategy.managed.modelchecking.ModelCheckingOptions
 import org.jetbrains.kotlinx.lincheck.strategy.stress.StressOptions
-import org.jetbrains.kotlinx.lincheck.test.checkTraceHasNoLincheckEvents
 import org.junit.Test
-import java.lang.IllegalStateException
 import java.lang.reflect.InvocationTargetException
 import kotlin.reflect.KClass
 
@@ -55,7 +53,6 @@ abstract class AbstractNVMLincheckTest(
                     "This test should fail, but no error has been occurred (see the logs for details)"
                 }
             } else {
-                failure.trace?.let { checkTraceHasNoLincheckEvents(it.toString()) }
                 if (failure is UnexpectedExceptionFailure) {
                     assert(failure.exception !is CrashError) { "Crash error must not be thrown: \n $failure" }
                     if (failure.exception::class !in expectedExceptions) throw failure.exception
@@ -79,17 +76,13 @@ abstract class AbstractNVMLincheckTest(
     }
 
     @Test
-    fun testWithStressStrategy(): Unit = StressOptions().run {
-        commonConfiguration()
-        customize()
-        runInternalTest()
-    }
-
-    @Test
-    fun testWithModelCheckingStrategy(): Unit = ModelCheckingOptions().run {
-        commonConfiguration()
-        customize()
-        runInternalTest()
+    fun testWithStressStrategy(): Unit = repeat(1000) {
+        StressOptions().run {
+            commonConfiguration()
+            customize()
+            runInternalTest()
+        }
+        println("ok ${it + 1}")
     }
 
     private fun <O : Options<O, *>> O.commonConfiguration(): Unit = run {
